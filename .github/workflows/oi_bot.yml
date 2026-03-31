@@ -1,0 +1,41 @@
+name: OI Alert Bot
+
+on:
+  schedule:
+    # Every 60 min Mon-Fri, 3:45–10:00 UTC = 9:15 AM–3:30 PM IST
+    - cron: '15 3 * * 1-5'
+    - cron: '15 4 * * 1-5'
+    - cron: '15 5 * * 1-5'
+    - cron: '15 6 * * 1-5'
+    - cron: '15 7 * * 1-5'
+    - cron: '15 8 * * 1-5'
+    - cron: '15 9 * * 1-5'
+  workflow_dispatch:   # manual "Run workflow" button on GitHub
+
+jobs:
+  oi-update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: pip install -r requirements.txt
+
+      - name: Run OI Bot
+        env:
+          ANGEL_CLIENT_ID:   ${{ secrets.ANGEL_CLIENT_ID }}
+          ANGEL_API_KEY:     ${{ secrets.ANGEL_API_KEY }}
+          ANGEL_API_SECRET:  ${{ secrets.ANGEL_API_SECRET }}
+          ANGEL_TOTP_SECRET: ${{ secrets.ANGEL_TOTP_SECRET }}
+          ANGEL_PASSWORD:    ${{ secrets.ANGEL_PASSWORD }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
+          STRIKE_WINDOW: '15'
+          TOP_WALLS: '3'
+          SPIKE_THRESHOLD: '30'
+          INDICES: 'NIFTY,BANKNIFTY'
+        run: python main.py test
