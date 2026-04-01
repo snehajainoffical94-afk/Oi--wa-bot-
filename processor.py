@@ -9,7 +9,7 @@ def get_atm(spot: float, symbol: str) -> int:
     return round(spot / gap) * gap
 
 
-def process_chain(records: list, symbol: str) -> dict:
+def process_chain(records: list, symbol: str, spot: float = None) -> dict:
     """
     Input : list of strike dicts from fetcher.py
     Output: structured dict for formatter.py
@@ -19,20 +19,20 @@ def process_chain(records: list, symbol: str) -> dict:
 
     gap = 50 if symbol == "NIFTY" else 100
 
-    # Estimate spot from strike with highest combined OI near middle
-    mid_idx = len(records) // 2
-    spot    = float(records[mid_idx]["strike"])
-
-    # Better spot: strike where CE_OI + PE_OI is highest near middle
-    window  = records[max(0, mid_idx - 10): mid_idx + 10]
-    best    = max(window, key=lambda x: x["ce_oi"] + x["pe_oi"])
-    spot    = float(best["strike"])
+    # Use real live spot price from NSE index token
+    if spot is None:
+        raise ValueError(f"Spot price missing for {symbol} — cannot determine ATM")
 
     atm = get_atm(spot, symbol)
+    logger.info(f"{symbol} spot={spot} ATM={atm}")
 
     # ── Major Walls ──────────────────────────────────────────────────────────
-    ce_walls = sorted(records, key=lambda x: x["ce_oi"], reverse=True)[:TOP_WALLS]
-    pe_walls = sorted(records, key=lambda x: x["pe_oi"], reverse=True)[:TOP_WALLS]
+    # CE walls: only above ATM (resistance above market)
+    # PE walls: only below ATM (support below market)
+    ce_candidates = [r for r in records if r["strike"] >= atm]
+    pe_candidates = [r for r in records if r["strike"] <= atm]
+    ce_walls = sorted(ce_candidates, key=lambda x: x["ce_oi"], reverse=True)[:TOP_WALLS]
+    pe_walls = sorted(pe_candidates, key=lambda x: x["pe_oi"], reverse=True)[:TOP_WALLS]
 
     # ── Battle Zone ──────────────────────────────────────────────────────────
     battle_zone = [r for r in records

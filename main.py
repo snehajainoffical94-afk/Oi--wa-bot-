@@ -48,8 +48,8 @@ def run_oi_update():
     logger.info("=== Running OI Update ===")
     for symbol in INDICES:
         try:
-            df        = fetch_option_chain(symbol)
-            processed = process_chain(df, symbol)
+            df, spot  = fetch_option_chain(symbol)
+            processed = process_chain(df, symbol, spot)
             message   = format_update(processed)
 
             send_telegram(message)
@@ -70,8 +70,8 @@ def run_spike_check():
     logger.info("=== Running Spike Check ===")
     for symbol in INDICES:
         try:
-            df        = fetch_option_chain(symbol)
-            processed = process_chain(df, symbol)
+            df, spot  = fetch_option_chain(symbol)
+            processed = process_chain(df, symbol, spot)
             spikes    = detect_spikes(symbol, processed)
 
             if spikes:
@@ -90,8 +90,8 @@ def run_manual():
     logger.info("Manual run triggered (market hours bypassed).")
     for symbol in INDICES:
         try:
-            df        = fetch_option_chain(symbol)
-            processed = process_chain(df, symbol)
+            df, spot  = fetch_option_chain(symbol)
+            processed = process_chain(df, symbol, spot)
             message   = format_update(processed)
             send_telegram(message)
             save_snapshot(symbol, processed)

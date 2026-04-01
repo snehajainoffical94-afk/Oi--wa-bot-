@@ -18,6 +18,25 @@ from auth import auth_headers
 logger = logging.getLogger(__name__)
 
 BASE_URL    = "https://apiconnect.angelone.in"
+
+# NSE index tokens for live spot price
+SPOT_TOKENS = {"NIFTY": "26000", "BANKNIFTY": "26009"}
+
+
+def fetch_spot(symbol: str) -> float:
+    """Fetch real-time spot price for NIFTY or BANKNIFTY from NSE index token."""
+    token = SPOT_TOKENS.get(symbol)
+    if not token:
+        raise ValueError(f"No spot token for {symbol}")
+    headers = auth_headers()
+    body = {"mode": "LTP", "exchangeTokens": {"NSE": [token]}}
+    r = requests.post(f"{BASE_URL}/rest/secure/angelbroking/market/v1/quote/",
+                      json=body, headers=headers, timeout=10)
+    r.raise_for_status()
+    fetched = r.json()["data"]["fetched"]
+    if not fetched:
+        raise ValueError(f"Spot price not returned for {symbol}")
+    return float(fetched[0]["ltp"])
 MASTER_URL  = "https://margincalculator.angelone.in/OpenAPI_File/files/OpenAPIScripMaster.json"
 MASTER_FILE = "state/instrument_master.json"
 MASTER_DATE = "state/master_date.txt"
@@ -144,11 +163,13 @@ def _batch_quote(tokens: list[str]) -> list:
     return resp["data"].get("fetched", [])
 
 
-def fetch_option_chain(symbol: str) -> list:
+def fetch_option_chain(symbol: str) -> tuple[list, float]:
     """
     Main entry point.
-    Returns list of dicts with strike, CE OI/change, PE OI/change.
+    Returns (chain: list of strike dicts, spot: float).
     """
+    spot       = fetch_spot(symbol)
+    logger.info(f"{symbol} live spot: {spot}")
     master     = get_master()
     all_tokens = get_option_tokens(symbol, master)
 
@@ -198,4 +219,4 @@ def fetch_option_chain(symbol: str) -> list:
 
     result = sorted(strike_map.values(), key=lambda x: x["strike"])
     logger.info(f"{symbol}: {len(result)} strikes processed.")
-    return result
+    return result, spot
