@@ -114,11 +114,17 @@ def format_update(data: dict) -> str:
     sup = view.get("support", 0)
     res = view.get("resistance", 0)
     bias = view.get("bias", "Neutral")
+    if "Bullish" in bias:
+        bias_icon = "🟢"
+    elif "Bearish" in bias:
+        bias_icon = "🔴"
+    else:
+        bias_icon = "⚪"
+
     lines += [
         "*View*",
-        f"Support *{sup:,}*  |  Resistance *{res:,}*",
-        f"Range {sup:,}–{res:,}  |  {bias}",
-        f"Above {res:,} → bullish  |  Below {sup:,} → bearish",
+        f"🟢 Support *{sup:,}*  |  🔴 Resistance *{res:,}*",
+        f"{bias_icon} *{bias}*",
     ]
 
     return "\n".join(lines)

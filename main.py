@@ -20,6 +20,7 @@ from processor import process_chain
 from formatter import format_update, format_spike_alert
 from spike_detector import save_snapshot, detect_spikes
 from notifier import send_telegram
+from validator import run_validation, format_validation_alert
 from config import INDICES
 
 logging.basicConfig(
@@ -50,8 +51,14 @@ def run_oi_update():
         try:
             df, spot  = fetch_option_chain(symbol)
             processed = process_chain(df, symbol, spot)
-            message   = format_update(processed)
 
+            # Auto-validate before sending
+            issues = run_validation(symbol, spot, df, processed)
+            if issues:
+                logger.warning(f"{symbol} validation issues: {issues}")
+                send_telegram(format_validation_alert(issues))
+
+            message = format_update(processed)
             send_telegram(message)
             save_snapshot(symbol, processed)
             logger.info(f"{symbol} update sent.")
@@ -92,7 +99,14 @@ def run_manual():
         try:
             df, spot  = fetch_option_chain(symbol)
             processed = process_chain(df, symbol, spot)
-            message   = format_update(processed)
+
+            # Auto-validate
+            issues = run_validation(symbol, spot, df, processed)
+            if issues:
+                logger.warning(f"{symbol} validation issues: {issues}")
+                send_telegram(format_validation_alert(issues))
+
+            message = format_update(processed)
             send_telegram(message)
             save_snapshot(symbol, processed)
             logger.info(f"{symbol} update sent.")
