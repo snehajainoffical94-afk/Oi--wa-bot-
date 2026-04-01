@@ -18,4 +18,6 @@ TELEGRAM_CHAT_ID   = os.getenv("TELEGRAM_CHAT_ID", "")
 STRIKE_WINDOW    = int(os.getenv("STRIKE_WINDOW", "15"))
 TOP_WALLS        = int(os.getenv("TOP_WALLS", "3"))
 SPIKE_THRESHOLD  = int(os.getenv("SPIKE_THRESHOLD", "30"))
-INDICES          = os.getenv("INDICES", "NIFTY,BANKNIFTY").split(",")
+# BANKNIFTY removed temporarily — Angel One master has no weekly BANKNIFTY expiries
+# Will re-enable when Upstox/TrueData API is connected
+INDICES          = os.getenv("INDICES", "NIFTY").split(",")

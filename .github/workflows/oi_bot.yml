@@ -37,5 +37,5 @@ jobs:
           STRIKE_WINDOW: '15'
           TOP_WALLS: '3'
           SPIKE_THRESHOLD: '30'
-          INDICES: 'NIFTY,BANKNIFTY'
+          INDICES: 'NIFTY'
         run: python main.py test
