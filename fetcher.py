@@ -90,27 +90,40 @@ def _format_expiry_master(d: date) -> str:
 
 # ── Token Lookup ──────────────────────────────────────────────────────────────
 
-def get_nearest_expiry_from_master(symbol: str, master: list) -> str:
-    """Pick the nearest future expiry for a symbol from actual master data."""
+def get_monthly_expiry_from_master(symbol: str, master: list) -> str:
+    """
+    Return the MONTHLY (month-end) expiry for symbol.
+    Monthly = the last expiry in the current calendar month.
+    If current month has no remaining expiry, use next month's last expiry.
+    """
     today = date.today()
-    expiries = set(
-        inst["expiry"]
-        for inst in master
-        if inst.get("name") == symbol
-        and inst.get("instrumenttype") == "OPTIDX"
-        and inst.get("exch_seg") == "NFO"
-    )
     future = []
-    for e in expiries:
-        try:
-            d = datetime.strptime(e, "%d%b%Y").date()
-            if d >= today:
-                future.append((d, e))
-        except Exception:
-            continue
+    for inst in master:
+        if (inst.get("name") == symbol
+                and inst.get("instrumenttype") == "OPTIDX"
+                and inst.get("exch_seg") == "NFO"):
+            try:
+                d = datetime.strptime(inst["expiry"], "%d%b%Y").date()
+                if d >= today:
+                    future.append((d, inst["expiry"]))
+            except Exception:
+                continue
+
     if not future:
         raise ValueError(f"No future expiry found in master for {symbol}")
-    return sorted(future)[0][1]   # nearest expiry string
+
+    # Group by (year, month) → pick last date per group
+    months: dict = {}
+    for d, e in set(future):
+        key = (d.year, d.month)
+        if key not in months or d > months[key][0]:
+            months[key] = (d, e)
+
+    # Current month first, else next available month
+    cur_key = (today.year, today.month)
+    if cur_key in months:
+        return months[cur_key][1]
+    return min(months.values(), key=lambda x: x[0])[1]
 
 
 def get_option_tokens(symbol: str, master: list) -> list:
@@ -119,7 +132,7 @@ def get_option_tokens(symbol: str, master: list) -> list:
       {token, strike, option_type, expiry_str}
     for all strikes of the nearest available expiry.
     """
-    expiry_str = get_nearest_expiry_from_master(symbol, master)
+    expiry_str = get_monthly_expiry_from_master(symbol, master)
 
     tokens = []
     for inst in master:
