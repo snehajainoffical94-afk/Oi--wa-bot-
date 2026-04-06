@@ -3,3 +3,4 @@ python-dotenv==1.0.0
 apscheduler==3.10.4
 pytz==2024.1
 pyotp==2.9.0
+growwapi==1.5.0

@@ -25,17 +25,19 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      # Restore previous OI state so we can calculate OI *change*
+      - name: Restore OI state
+        uses: actions/cache@v4
+        with:
+          path: state/groww_oi_state.json
+          key: oi-state-${{ runner.os }}
+          restore-keys: |
+            oi-state-
+
       - name: Run OI Bot
         env:
-          ANGEL_CLIENT_ID:   ${{ secrets.ANGEL_CLIENT_ID }}
-          ANGEL_API_KEY:     ${{ secrets.ANGEL_API_KEY }}
-          ANGEL_API_SECRET:  ${{ secrets.ANGEL_API_SECRET }}
-          ANGEL_TOTP_SECRET: ${{ secrets.ANGEL_TOTP_SECRET }}
-          ANGEL_PASSWORD:    ${{ secrets.ANGEL_PASSWORD }}
+          GROWW_API_TOKEN:    ${{ secrets.GROWW_API_TOKEN }}
+          GROW_API_SECRET:    ${{ secrets.GROW_API_SECRET }}
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
-          STRIKE_WINDOW: '15'
-          TOP_WALLS: '3'
-          SPIKE_THRESHOLD: '30'
-          INDICES: 'NIFTY'
-        run: python main.py test
+        run: python groww_bot.py
