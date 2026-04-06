@@ -26,11 +26,11 @@ jobs:
         run: pip install -r requirements.txt
 
       # Restore previous OI state so we can calculate OI *change*
-      - name: Restore OI state
-        uses: actions/cache@v4
+      - name: Restore OI state from previous run
+        uses: actions/cache/restore@v4
         with:
           path: state/groww_oi_state.json
-          key: oi-state-${{ runner.os }}
+          key: oi-state-dummy
           restore-keys: |
             oi-state-
 
@@ -41,3 +41,9 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID:   ${{ secrets.TELEGRAM_CHAT_ID }}
         run: python groww_bot.py
+
+      - name: Save OI state for next run
+        uses: actions/cache/save@v4
+        with:
+          path: state/groww_oi_state.json
+          key: oi-state-${{ github.run_id }}
